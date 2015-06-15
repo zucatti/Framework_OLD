@@ -5,7 +5,7 @@
  *
  */
 
-$_VERSION = "0.9.1";
+$_VERSION = "0.9.1a";
 
 CDN = "http://omneedia.github.io/cdn"; //PROD
 //CDN = "/cdn"; // DEBUG
@@ -34,20 +34,29 @@ function _Task_execute(App,Tasker)
 	};
 };
 
-function __RESTART__() {
-var _CP=require('child_process');
+var uniqueid=require('node-uuid');
+_SESSION_=uniqueid.v4();
+
+if (process.argv.indexOf('auto#0')>-1) _FIRST_TIME=1; else _FIRST_TIME=0;
+
+function __RESTART__(op) {
+	var _CP=require('child_process');
 	var aargs=process.argv.slice(2);
 	var rr=aargs.indexOf('--watch');
-	if (rr>-1) aargs.splice(rr,1);
+	if (rr>-1) {
+		aargs.splice(rr,1);
+		aargs.unshift('session#'+_SESSION_);
+		aargs.unshift('auto#'+op);
+	};
 	var _CP2=_CP.fork(__dirname+require('path').sep+"omneedia.js",aargs);
 	_CP2.on('exit',function() {
-		__RESTART__();
+		__RESTART__(1);
 	});
 };
 
 
 if (process.argv.indexOf("--watch")>-1) {
-	__RESTART__();
+	__RESTART__(0);
 	return;
 };
 
@@ -55,7 +64,6 @@ PROXY="";
 
 var shelljs=require('shelljs');
 var moment = require('moment');
-//var util = require('util');
 var asciimo = require('asciimo').Figlet;
 var colors = require('colors');
 var github=require('github');
@@ -2071,11 +2079,9 @@ if (PROJECT_HOME!="-") {
 	Manifest=JSON.parse(json);
 	
 	//get args
-	for (var i=0;i<process.argv.length;i++) {
-		if (process.argv[i]=="start") var setmeup=process.argv[i+1];
-		if (process.argv[i]=="updatedb") var setmeup=process.argv[i+1];
-		if (process.argv[i]=="migrationdb") var setmeup=process.argv[i+1];
-	};
+	if (process.argv.indexOf("start")>-1) var setmeup=process.argv[process.argv.indexOf("start")+1];
+	if (process.argv.indexOf("updatedb")>-1) var setmeup=process.argv[process.argv.indexOf("updatedb")+1];
+	if (process.argv.indexOf("migrationdb")>-1) var setmeup=process.argv[process.argv.indexOf("migrationdb")+1];
 	
 	if (process.argv.indexOf("build")>-1) {
 		setmeup="prod";
@@ -2710,7 +2716,8 @@ function App_Update(nn,cb)
 		var style=fs.readFileSync(PROJECT_HOME+path.sep+'.style','utf-8');
 		style=style.replace('{COLOR}',manifest.splashscreen.background);
 		style=style.replace('{BKCOLOR}',manifest.splashscreen.color);
-		ndx=ndx.split('<style type="text/css">')[0]+'<style type="text/css">\n'+style+'</style>'+ndx.split('</style>')[1];
+		style=style+'\t.omneedia-overlay{background-color: rgba(0, 0, 0, 0.8);z-index: 999999;position:absolute;left:0px;top:0px;width:100%;height:100%;display:none;}\n';
+		ndx=ndx.split('<style type="text/css">')[0]+'<style type="text/css">\n'+style+'\t</style>'+ndx.split('</style>')[1];
 		fs.writeFileSync(PROJECT_HOME+path.sep+'src'+path.sep+'index.html',ndx);
 		
 		if (!fs.existsSync(PROJECT_HOME+path.sep+'etc'+path.sep+"settings.json")) {
@@ -3161,7 +3168,7 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		return;
 	};
 	
-	if (argv.indexOf('connect')>-1)
+	/*if (argv.indexOf('connect')>-1)
 	{
 		var server = express();
 		server.configure(function(){
@@ -3203,7 +3210,7 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		server.listen(Manifest.server.port);
 		
 		open('http://'+getIPAddress()+':'+Manifest.server.port+'/connect/','chrome');
-	}
+	}*/
 	
 	
 	function process_api(d,i,batch,res)
@@ -3560,6 +3567,17 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		});
 		
 		app.post('/api',processRoute);
+		
+		app.get('/session',function(req,res) {			
+			res.header("Content-Type", "application/json; charset=utf-8");
+			var response = {
+				omneedia : {
+					engine: $_VERSION
+				},
+				session: _SESSION_
+			};
+			res.end(JSON.stringify(response,null,4));
+		});
 		
 		app.get('/api',function(req,res) {
 			res.header("Content-Type", "application/json; charset=utf-8");
@@ -4102,40 +4120,44 @@ asciimo.write(" omneedia", "Colossal", function(art){
 			if (Manifest.platform=="mobile") {
 				console.log('  - Debug service started at http://'+getIPAddress()+':'+Manifest.debug.port+'/client');
 				Exec(__dirname+path.sep+"node_modules"+path.sep+".bin"+path.sep+"weinre --httpPort "+Manifest.debug.port+" --boundHost -all-",function(){});
-				open('http://'+getIPAddress()+':'+Manifest.server.port+'/connect/','chrome');
+				if (_FIRST_TIME==1) open('http://'+getIPAddress()+':'+Manifest.server.port+'/connect/','chrome');
 			} else
 			{
 				//open('http://'+getIPAddress()+':'+Manifest.server.port+'/','chrome');
-				open('http://127.0.0.1:'+Manifest.server.port+'/','chrome');
+				if (_FIRST_TIME==1) open('http://127.0.0.1:'+Manifest.server.port+'/','chrome');
 			}
-			
+				
 			console.log('  - Drone started in debug mode at http://'+getIPAddress()+':'+Manifest.server.port+'');
 			console.log('');
-			var fsmonitor = require('fsmonitor');
-			var prefs={
-				// include files
-				matches: function(realpath) {
-					if (realpath.indexOf('.js')>-1) return true; 
-					if (realpath.indexOf('.json')>-1) return true; 
-					if (realpath.indexOf('.css')>-1) return true; 
-					return false;
-				},
-				// exclude directories
-				excludes: function(realpath) {
-					if (realpath.indexOf('.git')>-1) return true;
-					if (realpath.indexOf('bin')>-1) return true;
-					if (realpath.indexOf('dev')>-1) return true;
-					if (realpath.indexOf('builds')>-1) return true;
-					if (realpath.indexOf('Tasks')>-1) return true;
-				}
+
+			if ((process.argv.indexOf("auto#1")>-1) || (process.argv.indexOf("auto#0")>-1)) {
+				var fsmonitor = require('fsmonitor');
+				
+				var prefs={
+					// include files
+					matches: function(realpath) {
+						if (realpath.indexOf('.js')>-1) return true; 
+						if (realpath.indexOf('.json')>-1) return true; 
+						if (realpath.indexOf('.css')>-1) return true; 
+						return false;
+					},
+					// exclude directories
+					excludes: function(realpath) {
+						if (realpath.indexOf('.git')>-1) return true;
+						if (realpath.indexOf('bin')>-1) return true;
+						if (realpath.indexOf('dev')>-1) return true;
+						if (realpath.indexOf('builds')>-1) return true;
+						if (realpath.indexOf('Tasks')>-1) return true;
+					}
+				};
+				fsmonitor.watch(PROJECT_HOME, prefs , function(change) {
+					console.log("");
+					console.log(change);
+					console.log("	!!!! Change detected... reload".yellow);  
+					console.log("");
+					process.kill(process.pid);							
+				});
 			};
-			fsmonitor.watch(PROJECT_HOME, prefs , function(change) {
-				console.log("");
-				console.log(change);
-				console.log("	!!!! Change detected... reload".yellow);  
-				console.log("");
-				process.kill(process.pid);							
-			});
 			
 		});
 				
