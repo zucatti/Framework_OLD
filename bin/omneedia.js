@@ -10,6 +10,20 @@ $_VERSION = "0.9.1a";
 CDN = "http://omneedia.github.io/cdn"; //PROD
 //CDN = "/cdn"; // DEBUG
 
+var fs=require('fs');
+var path=require('path');
+
+if (process.argv.indexOf('--builder')>-1) {
+	if (require('process').platform=="linux") {
+		if (!fs.existsSync(__dirname+path.sep+'im'+path.sep+'convert')) {
+			var cmd="convert $1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15";
+			if (!fs.existsSync(__dirname+path.sep+'im')) fs.mkdirSync(__dirname+path.sep+'im');
+			fs.writeFileSync(__dirname+path.sep+'im'+path.sep+'convert',cmd);
+			fs.chmodSync(__dirname+path.sep+'im'+path.sep+'convert',777);
+		};
+	}; 	
+};
+
 function _Task_execute(App,Tasker)
 {
 	if (fs.existsSync(PROJECT_HOME+path.sep+'src'+path.sep+'Contents'+path.sep+'Tasks'+path.sep+"jobs"+path.sep+Tasker.taskId+".json")) {
@@ -67,9 +81,7 @@ var moment = require('moment');
 var asciimo = require('asciimo').Figlet;
 var colors = require('colors');
 var github=require('github');
-var fs=require('fs');
 var file=require('fsutil');
-var path=require('path');
 var isWin = /^win/.test(require('process').platform);
 if (isWin) {
 	if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData');
