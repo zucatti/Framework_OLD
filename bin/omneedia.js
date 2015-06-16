@@ -87,7 +87,6 @@ var htmlminifier = require('html-minifier');
 var request = require('request');
 var XML2JS = require('xml2js');
 
-
 if (!fs.existsSync(__dirname+path.sep+'.appdata')) fs.mkdirSync(__dirname+path.sep+'.appdata'); 
 if (!fs.existsSync(__dirname+path.sep+'.appdata'+path.sep+'npm')) fs.mkdirSync(__dirname+path.sep+'.appdata'+path.sep+'npm'); 
 if (!fs.existsSync(__dirname+path.sep+'.home')) fs.mkdirSync(__dirname+path.sep+'.home'); 
@@ -2716,7 +2715,7 @@ function App_Update(nn,cb)
 		var style=fs.readFileSync(PROJECT_HOME+path.sep+'.style','utf-8');
 		style=style.replace('{COLOR}',manifest.splashscreen.background);
 		style=style.replace('{BKCOLOR}',manifest.splashscreen.color);
-		style=style+'\t.omneedia-overlay{background-color: rgba(0, 0, 0, 0.8);z-index: 999999;position:absolute;left:0px;top:0px;width:100%;height:100%;display:none;}\n';
+		style=style+'\t.omneedia-overlay{background-color: rgba(0, 0, 0, 0.8);z-index: 9999999999;position:absolute;left:0px;top:0px;width:100%;height:100%;display:none;}\n';
 		ndx=ndx.split('<style type="text/css">')[0]+'<style type="text/css">\n'+style+'\t</style>'+ndx.split('</style>')[1];
 		fs.writeFileSync(PROJECT_HOME+path.sep+'src'+path.sep+'index.html',ndx);
 		
@@ -3339,7 +3338,7 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		app.use(multer({ dest: __dirname+require('path').sep+'uploads'}))
 		app.use(require('cookie-parser')());
 
-		app.use(require('morgan')('dev'));
+		if (process.argv.indexOf('--debug')>-1) app.use(require('morgan')('dev'));
 		app.use(allowCrossDomain);
 
 		app.use(require('compression')());
@@ -3448,7 +3447,8 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		};
 		
 		if (MSettings.auth) {
-			app.post('/login', function(req,res) {
+			app.get('/login', function(req,res) {
+				res.status(401).send('missing authorization header');
 			});		
 			app.post('/remotelogin', function(req,res) {
 				var response=JSON.parse(req.body.response);
