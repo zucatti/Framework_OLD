@@ -70,8 +70,11 @@ var github=require('github');
 var fs=require('fs');
 var file=require('fsutil');
 var path=require('path');
-if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData');
-if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData'+path.sep+'Local')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData'+path.sep+'Local');
+var isWin = /^win/.test(require('process').platform);
+if (isWin) {
+	if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData');
+	if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData'+path.sep+'Local')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData'+path.sep+'Local');
+};
 var zip=require('adm-zip');
 var unzip=require('unzip');
 var Exec = require('child_process').exec;
