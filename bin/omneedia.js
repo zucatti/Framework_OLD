@@ -12,9 +12,10 @@ CDN = "http://omneedia.github.io/cdn"; //PROD
 
 var fs=require('fs');
 var path=require('path');
+var isWin = /^win/.test(process.platform);
 
 if (process.argv.indexOf('--builder')>-1) {
-	if (require('process').platform=="linux") {
+	if (process.platform=="linux") {
 		if (!fs.existsSync(__dirname+path.sep+'im'+path.sep+'convert')) {
 			var cmd="convert $1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15";
 			if (!fs.existsSync(__dirname+path.sep+'im')) fs.mkdirSync(__dirname+path.sep+'im');
@@ -82,7 +83,6 @@ var asciimo = require('asciimo').Figlet;
 var colors = require('colors');
 var github=require('github');
 var file=require('fsutil');
-var isWin = /^win/.test(require('process').platform);
 if (isWin) {
 	if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData');
 	if (!fs.existsSync(__dirname+path.sep+'.home'+path.sep+'AppData'+path.sep+'Local')) fs.mkdirSync(__dirname+path.sep+'.home'+path.sep+'AppData'+path.sep+'Local');
