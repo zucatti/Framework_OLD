@@ -1,12 +1,13 @@
 var fs = require("fs");
 
 function main() {
-  var
+  var fs=require('fs');
   fs.readdir("./node_modules", function (err, dirs) {
     if (err) {
       console.log(err);
       return;
-    }
+    };
+	var response=[];
     dirs.forEach(function(dir){
       if (dir.indexOf(".") !== 0) {
         var packageJsonFile = "./node_modules/" + dir + "/package.json";
@@ -17,11 +18,11 @@ function main() {
             }
             else {
               var json = JSON.parse(data);
-			  if ((json.name!="db") && (json.name!="") && (json.name!=))
-              console.log('"'+json.name+'": "' + json.version + '",');
+			  if ((json.name!="db") && (json.name!="")) response.push('"'+json.name+'": "' + json.version + '"');
+			  fs.writeFileSync('p.json',response.join(',\n'));
             }
           });
-        }
+        };
       }
     });
 

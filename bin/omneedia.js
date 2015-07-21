@@ -763,6 +763,10 @@ function make_ws()
 			name: "exec",
 			len: 1
 		};
+		REMOTE_API.actions["__QUERY__"][1]={
+			name: "post",
+			len: 3
+		};
 		var str="if (Ext.syncRequire) Ext.syncRequire('Ext.direct.Manager');Ext.namespace('App');";
 		str+="App.REMOTING_API="+JSON.stringify(REMOTE_API,null)+";";
 		str+="Ext.Direct.addProvider(App.REMOTING_API);";
@@ -849,8 +853,12 @@ function getController(controller)
 		var stores=_controller.split('stores')[1].split(']')[0].split('[')[1].trim().replace(/\t/g,'').replace(/\n/g,'').replace(/"/g,'').replace(/'/g,"").split(',');
 	}catch(e) {
 		var stores=[];
-	}
+	};
+	try {
 	var models=_controller.split('models')[1].split(']')[0].split('[')[1].trim().replace(/\t/g,'').replace(/\n/g,'').replace(/"/g,'').replace(/'/g,"").split(',');
+	}catch(e) {
+		var models=[];
+	};
 	var result="";
 	for (var i=0;i<models.length;i++)
 	{
@@ -863,6 +871,7 @@ function getController(controller)
 		}
 	};
 	result+="\n\n";
+	
 	for (var i=0;i<stores.length;i++)
 	{
 		var m=stores[i].replace(/\./g,"/");
@@ -881,11 +890,12 @@ function getController(controller)
 		PROCESSING_VIEW.push(v);
 	};
 	nview=getDistinctArray(nview);
-	
+
 	for (var i=0;i<nview.length;i++)
 	{
 		result+=fs.readFileSync(nview[i].replace(/\\/g,require('path').sep),"utf-8")+"\n";
 	};
+
 
 	if (fs.existsSync(PROJECT_DEV+path.sep+"webapp"+path.sep+"objects.js"))
 	fs.appendFileSync(PROJECT_DEV+path.sep+"webapp"+path.sep+"objects.js",result);
@@ -2096,9 +2106,25 @@ if (PROJECT_HOME!="-") {
 	if (process.argv.indexOf("start")>-1) var setmeup=process.argv[process.argv.indexOf("start")+1];
 	if (process.argv.indexOf("updatedb")>-1) var setmeup=process.argv[process.argv.indexOf("updatedb")+1];
 	if (process.argv.indexOf("migrationdb")>-1) var setmeup=process.argv[process.argv.indexOf("migrationdb")+1];
+
+	PROCESS_CUSTOM=-1;
+	if (process.argv.indexOf('production')>-1) {
+		PROCESS_NATIVE=false;				
+		PROCESS_PRODUCTION=true;
+		var p=glob.readdirSyncRecursive(PROJECT_HOME+path.sep+'etc');
+		for (var z=0;z<p.length;z++) {
+			try {
+			var cc=p[z].split('settings-')[1].split('.json')[0];
+			if (process.argv.indexOf(cc)>-1) PROCESS_CUSTOM=cc;
+			}catch(e) {
+			
+			}
+		}
+	};
 	
 	if (process.argv.indexOf("build")>-1) {
 		setmeup="prod";
+		if (PROCESS_CUSTOM!=-1) setmeup=PROCESS_CUSTOM;
 		if (!fs.existsSync(PROJECT_HOME+path.sep+'etc'+path.sep+'settings-'+setmeup+'.json')) {
 			console.log('');
 			console.log("  ! No settings.prod found. Can't build.".yellow);
@@ -3056,23 +3082,25 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		}
 	};
 
+	if (argv.indexOf('db')>-1)
+	{
+		if (argv.indexOf('update')>-1) {
+			App_Model_Db();
+			return;
+		};
+		if (argv.indexOf('import')>-1)
+		{
+			App_Migration_Db();
+			return;
+		};
+		return;		
+	};
+
 	if (argv.indexOf('update')>-1)
 	{
 		App_Update('');
 		return;
-	};
-
-	if (argv.indexOf('updatedb')>-1)
-	{
-		App_Model_Db();
-		return;
-	};
-
-	if (argv.indexOf('importdb')>-1)
-	{
-		App_Migration_Db();
-		return;
-	};
+	};	
 	
 	if (argv.indexOf('clean')>-1)
 	{
@@ -3116,11 +3144,21 @@ asciimo.write(" omneedia", "Colossal", function(art){
 				PROCESS_NATIVE=true;
 				PROCESS_WP8=true;
 			};
+			PROCESS_CUSTOM=-1;
 			if (process.argv.indexOf('production')>-1) {
-				PROCESS_NATIVE=false;
+				PROCESS_NATIVE=false;				
 				PROCESS_PRODUCTION=true;
+				var p=glob.readdirSyncRecursive(PROJECT_HOME+path.sep+'etc');
+				for (var z=0;z<p.length;z++) {
+					try {
+					var cc=p[z].split('settings-')[1].split('.json')[0];
+					if (process.argv.indexOf(cc)>-1) PROCESS_CUSTOM=cc;
+					}catch(e) {
+					
+					}
+				}
 			};
-			
+
 			if (!fs.existsSync(PROJECT_HOME+path.sep+'dev')) fs.mkdirSync(PROJECT_HOME+path.sep+'dev');
 			if (!fs.existsSync(PROJECT_HOME+path.sep+'dev'+path.sep+'webapp')) fs.mkdirSync(PROJECT_HOME+path.sep+'dev'+path.sep+'webapp');
 			var datetime = new Date();
@@ -3310,35 +3348,6 @@ asciimo.write(" omneedia", "Colossal", function(art){
 	{
 		if (setmeup) console.log("  + switch to settings ["+setmeup+"]\n");
 		
-		//CORS middleware
-		var allowCrossDomain = function(req, res, next) {
-			var oneof = false;
-			res.header('Access-Control-Allow-Credentials', true);
-			if(req.headers.origin) {
-				res.header('Access-Control-Allow-Origin', req.headers.origin);
-				oneof = true;
-			}
-			if(req.headers['access-control-request-method']) {
-				res.header('Access-Control-Allow-Methods', req.headers['access-control-request-method']);
-				oneof = true;
-			}
-			if(req.headers['access-control-request-headers']) {
-				res.header('Access-Control-Allow-Headers', req.headers['access-control-request-headers']);
-				oneof = true;
-			}
-			if(oneof) {
-				res.header('Access-Control-Max-Age', 60 * 60 * 24 * 365);
-			}
-
-			// intercept OPTIONS method
-			if (oneof && req.method == 'OPTIONS') {
-				res.send(200);
-			}
-			else {
-				next();
-			}
-		};
-
 		var app = express();
 		
 		/*
@@ -3349,12 +3358,14 @@ asciimo.write(" omneedia", "Colossal", function(art){
 
 		app.use(bodyParser.json({limit: '5000mb', extended: true}));
 		app.use(bodyParser.urlencoded({limit: '5000mb', extended: true}));
+		
 		var multer=require('multer');
-		app.use(multer({ dest: __dirname+require('path').sep+'uploads'}))
+		app.use(multer({ dest: __dirname+require('path').sep+'uploads'}));
+
 		app.use(require('cookie-parser')());
 
 		if (process.argv.indexOf('--debug')>-1) app.use(require('morgan')('dev'));
-		app.use(allowCrossDomain);
+		app.use(require('cors')());
 
 		app.use(require('compression')());
 		app.use(express.static(PROJECT_WEB));
@@ -3374,6 +3385,18 @@ asciimo.write(" omneedia", "Colossal", function(art){
 			resave: true			
 		}));
 		
+/*		function errorHandler(err, req, res, next) {
+			var Ouch=require('ouch');
+			var ouchInstance = (new Ouch).pushHandler(
+                    new Ouch.handlers.PrettyPageHandler('orange', null, 'sublime')
+                );
+            ouchInstance.handleException(e, req, res, function (output) {
+                console.log('Error handled properly')
+				next();
+            });
+		}
+		
+		app.use(errorHandler);*/
 		app.use(require('errorhandler')({ dumpExceptions: true, showStack: true }))
 		
 		// MOBILE STUFF
@@ -3544,7 +3567,7 @@ asciimo.write(" omneedia", "Colossal", function(art){
 			};
 
 			authom.on("auth", function(req, res, data) {
-
+				console.log(data);
 				if (data.service=="google") {
 					var profile={};
 					profile.username=data.data;
@@ -3569,6 +3592,7 @@ asciimo.write(" omneedia", "Colossal", function(art){
 
 			authom.on("error", function(req, res, data) {
 			  // called when an error occurs during authentication
+			  console.log('--------');
 			  console.log(data);
 			});
 			
@@ -4167,8 +4191,9 @@ asciimo.write(" omneedia", "Colossal", function(art){
 				};
 				fsmonitor.watch(PROJECT_HOME, prefs , function(change) {
 					console.log("");
-					console.log(change);
 					console.log("	!!!! Change detected... reload".yellow);  
+					console.log("");
+					console.log(change);
 					console.log("");
 					process.kill(process.pid);							
 				});
