@@ -5,10 +5,10 @@
  *
  */
 
-$_VERSION = "0.9.1a";
+$_VERSION = "0.9.1b";
 
-CDN = "http://omneedia.github.io/cdn"; //PROD
-//CDN = "/cdn"; // DEBUG
+//CDN = "http://omneedia.github.io/cdn"; //PROD
+CDN = "/cdn"; // DEBUG
 
 var fs=require('fs');
 var path=require('path');
@@ -2672,6 +2672,9 @@ function App_Update(nn,cb)
 		Settings.LIBRARIES=manifest.libraries;
 		else
 		Settings.LIBRARIES=[];
+		// we load omneedia.modules
+		var SETMODULES=JSON.parse(require('fs').readFileSync(__dirname+require('path').sep+'omneedia.modules','utf-8'));
+		
 		Settings.PATHS = {
 			"Contents": "Contents/Application/app",
 			"Culture": "Contents/Culture",
@@ -2682,24 +2685,23 @@ function App_Update(nn,cb)
 		};
 		Settings.CONTROLLERS=[];
 		for (var i=0;i<manifest.controllers.length;i++) Settings.CONTROLLERS.push(manifest.controllers[i]);
-		Settings.MODULES = [
-			"omneedia.Localizer",
-			"omneedia.App",
-			"omneedia.Auth"
-		];
+		Settings.MODULES = SETMODULES['*'];
 		
 		Settings.LIBRARIES=[];
 		if (manifest.libraries)
 		for (var i=0;i<manifest.libraries.length;i++) Settings.LIBRARIES.push(manifest.libraries[i]);
 		
 		if (manifest.platform=="desktop") {
-			Settings.MODULES.push("omneedia.Uploader");
-			Settings.MODULES.push("omneedia.GlobalMenu");
-			Settings.MODULES.push("Ext.ux.Notification");
+			for (var i=0;i<SETMODULES.desktop.length;i++) {
+				Settings.MODULES.push(SETMODULES.desktop[i]);
+			}
 		};
 		if (manifest.platform=="mobile") {
-			Settings.MODULES.push("omneedia.FS");
+			for (var i=0;i<SETMODULES.mobile.length;i++) {
+				Settings.MODULES.push(SETMODULES.mobile[i]);
+			}
 		};
+		
 		for (var i=0;i<manifest.modules.length;i++) Settings.MODULES.push(manifest.modules[i]);
 
 		Settings.AUTHORS=[];
@@ -2756,7 +2758,8 @@ function App_Update(nn,cb)
 		var style=fs.readFileSync(PROJECT_HOME+path.sep+'.style','utf-8');
 		style=style.replace('{COLOR}',manifest.splashscreen.background);
 		style=style.replace('{BKCOLOR}',manifest.splashscreen.color);
-		style=style+'\t.omneedia-overlay{background-color: rgba(0, 0, 0, 0.8);z-index: 9999999999;position:absolute;left:0px;top:0px;width:100%;height:100%;display:none;}\n';
+		//style=style+'\t.omneedia-overlay{background-color: rgba(0, 0, 0, 0.8);z-index: 9999999999;position:absolute;left:0px;top:0px;width:100%;height:100%;display:none;}\n';
+		style=style+'\t.omneedia-overlay{z-index: 9999999999;position:absolute;left:0px;top:0px;width:100%;height:100%;display:none;}\n';
 		ndx=ndx.split('<style type="text/css">')[0]+'<style type="text/css">\n'+style+'\t</style>'+ndx.split('</style>')[1];
 		fs.writeFileSync(PROJECT_HOME+path.sep+'src'+path.sep+'index.html',ndx);
 		
@@ -3306,12 +3309,25 @@ asciimo.write(" omneedia", "Colossal", function(art){
 				p.push(api.data[e]);
 			};
 			p.push(function(err,response){
-				batch[batch.length]={
-					action: api.action,
-					method: api.method,
-					result: response,
-					tid: api.tid,
-					type: "rpc"
+				if (err) {
+					batch.push({
+						action: api.action,
+						method: api.method,
+						result: response,
+						message: err.message,
+						data: err,
+						tid: api.tid,
+						type: "rpc"
+					});
+				} else {
+					err=null;
+					batch.push({
+						action: api.action,
+						method: api.method,
+						result: response,
+						tid: api.tid,
+						type: "rpc"
+					});
 				};
 				process_api(d,i+1,batch,res);				
 			});
