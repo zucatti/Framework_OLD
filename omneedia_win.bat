@@ -18,6 +18,7 @@
 @set HOMEPATH=%~p0bin\git\bin
 @if not exist "%HOME%" @set HOME=%HOMEDRIVE%%HOMEPATH%
 @if not exist "%HOME%" @set HOME=%USERPROFILE%
+start %~dp0\bin\mysql\bin\mysqld
 @cls
 @echo.
 @echo  -----------------------------
