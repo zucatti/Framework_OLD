@@ -1,0 +1,123 @@
+					return;
+					// update production
+					// update langs
+					var langs=[];
+					for (var i=0;i<r.spoken_languages.length;i++) {
+						langs.push({
+							scrapper: scrapper,
+							scrapper_id: r.spoken_languages[i]['iso_639_1'],
+							lang: r.spoken_languages[i].name
+						});
+					};					
+					// update cast & crew
+					var cast_properties=[];
+					var casting=[];
+					
+					App.Scrapper.getCasting(code, function(e,s) {
+						s=s.result;
+						for (var i=0;i<s.crew.length;i++){
+							cast_properties.push({
+								scrapper: scrapper,
+								scrapper_id: s.crew[i].job,
+								crew: s.crew[i].job
+							});
+						};
+						for (var i=0;i<s.cast.length;i++) {
+							casting.push({
+								scrapper: scrapper,
+								scrapper_id: s.cast[i].credit_id,
+								person: s.cast[i].name
+							});							
+						};
+						
+						// update langs & nationality
+						var nationality=[];
+						if (r.production_countries) {
+							for (var i=0;i<r.production_countries.length;i++) {
+								nationality.push({
+									scrapper: scrapper,
+									scrapper_id: r.production_countries[i]['iso_3166_1'],
+									nationality: r.production_countries[i].name
+								});
+							};
+						};						
+						var langs=[];
+						if (r.spoken_languages) {
+							for (var i=0;i<r.spoken_languages.length;i++) {
+								langs.push({
+									scrapper: scrapper,
+									scrapper_id: r.spoken_languages[i]['iso_639_1'],
+									lang: r.spoken_languages[i].name
+								});
+							};
+						};
+
+						var certs=[];
+						
+						var tags=[];
+						App.Scrapper.getTags(code, function(e,s) {
+							s=s.result;
+							for (var i=0;i<s.keywords.length;i++) {
+								tags.push({
+									scrapper: scrapper,
+									scrapper_id: s.keywords[i].id,
+									tag: s.keywords[i].name
+								});
+							};
+							
+							/*
+
+							Mise à jour de la base
+
+							*/
+							// Mise à jour des nationality
+							App.DB.post('library://nationality',nationality,function(response) {
+								// Mise à jour du crew
+								App.DB.post('library://crew',cast_properties,function(response) {
+									// Mise à jour du casting
+									App.DB.post('library://casting',casting,function(response) {
+										//Mise à jour langs
+										App.DB.post('library://langs',langs,function(response) {
+											// Mise à jour tags
+											App.DB.post('library://tags',tags,function(response) {
+
+											
+
+
+												/*var nationality=[];
+												for (var i=0;i<r.nationality.length;i++) {
+													nationality.push(parseInt(r.nationality[i].code));
+												};
+												App.DB.get('mediahub://contents{length}?id='+itemID,function(response) {
+													App.get('movieproperties textfield#TRuntime').setValue(_p.toSeconds(response.data[0].length));
+												});
+												var langs=[];
+												for (var i=0;i<r.language.length;i++) {
+													langs.push(parseInt(r.language[i].code));
+												};											
+												App.get('movieproperties boxselect#TLanguage').setValue(langs);
+												var tags=[];
+												for (var i=0;i<r.tag.length;i++) {
+													tags.push(r.tag[i].code);
+												};
+												App.get('movieproperties boxselect#TTags').setValue(tags);												*/
+												
+												//App.get('movieproperties boxselect#TPays').setValue(nationality);
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											});
+										});
+									});
+								});
+							});
+							
+						});
+					});

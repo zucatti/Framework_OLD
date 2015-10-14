@@ -5,10 +5,10 @@
   "main": "omneedia.js",
   "dependencies": {
 	"adm-zip": "0.4.7",
-	"api": "1.0.0",
+	"api": "",
 	"asciimo": "0.3.1",
 	"async": "1.2.1",
-	"authom": "0.4.31",
+	"authom": "",
 	"body-parser": "1.12.4",
 	"bouncy": "3.2.2",
 	"bower": "1.4.1",

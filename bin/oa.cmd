@@ -1,3 +1,3 @@
 @ECHO OFF
 
-node "%~dp0\omneedia.js" %*
+%~dp0\node "%~dp0\omneedia.js" %*

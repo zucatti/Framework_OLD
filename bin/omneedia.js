@@ -5,7 +5,7 @@
  *
  */
 
-$_VERSION = "0.9.1c";
+$_VERSION = "0.9.2";
 
 CDN = "http://omneedia.github.io/cdn"; //PROD
 //CDN = "/cdn"; // DEBUG
@@ -339,6 +339,8 @@ Auth = {
 	user: function(profile,fn) {
 		if (profile.provider=="google") var typ="google";
 		if (profile.provider=="cas") var typ="cas";	
+		if (profile.provider=="twitter") var typ="twitter";
+		if (profile.provider=="facebook") var typ="facebook";	
 		Auth.login(profile,typ,function(response) {
 			console.log(response);
 			fn(null,response);
@@ -728,8 +730,9 @@ function make_bootstrap()
 							};		
 						};
 					};
-					
+
 					async.map(BOOTSTRAP_FILES,download,function(err,result) {
+						console.log(err);
 						fs.writeFileSync(PROJECT_DEV+path.sep+"webapp"+path.sep+"bootstrap.js","var Ext = Ext || {};Ext.manifest = {compatibility:{ext: '4.2'}}\n"+result.join('\n\n\n/*************************************************/\n\n\n'));
 						make_resources(make_libraries);
 					});
@@ -775,6 +778,10 @@ function make_ws()
 		};
 		REMOTE_API.actions["__QUERY__"][1]={
 			name: "post",
+			len: 3
+		};
+		REMOTE_API.actions["__QUERY__"][1]={
+			name: "del",
 			len: 3
 		};
 		var str="if (Ext.syncRequire) Ext.syncRequire('Ext.direct.Manager');Ext.namespace('App');";
@@ -2136,8 +2143,7 @@ if (PROJECT_HOME!="-") {
 		setmeup="prod";
 		if (PROCESS_CUSTOM!=-1) setmeup=PROCESS_CUSTOM;
 		if (!fs.existsSync(PROJECT_HOME+path.sep+'etc'+path.sep+'settings-'+setmeup+'.json')) {
-			console.log('');
-			console.log("  ! No settings.prod found. Can't build.".yellow);
+			console.log("  ! No settings-prod found. Can't build.".yellow);
 			return;
 		}
 	};
@@ -3414,18 +3420,6 @@ asciimo.write(" omneedia", "Colossal", function(art){
 			resave: true			
 		}));
 		
-/*		function errorHandler(err, req, res, next) {
-			var Ouch=require('ouch');
-			var ouchInstance = (new Ouch).pushHandler(
-                    new Ouch.handlers.PrettyPageHandler('orange', null, 'sublime')
-                );
-            ouchInstance.handleException(e, req, res, function (output) {
-                console.log('Error handled properly')
-				next();
-            });
-		}
-		
-		app.use(errorHandler);*/
 		app.use(require('errorhandler')({ dumpExceptions: true, showStack: true }))
 		
 		// MOBILE STUFF
@@ -3514,6 +3508,8 @@ asciimo.write(" omneedia", "Colossal", function(art){
 		};
 		
 		if (MSettings.auth) {
+			console.log('------------------------------------------------------------');
+
 			app.get('/login', function(req,res) {
 				res.status(401).send('missing authorization header');
 			});		
@@ -3560,9 +3556,11 @@ asciimo.write(" omneedia", "Colossal", function(art){
 			});
 			
 			function ensureAuthenticated(req, res, next) {
-				//console.log(req.session);
+				console.log(req.session);
 				if (MSettings.auth.cas) req.session.authType="CAS";
 				if (MSettings.auth.google) req.session.authType="GOOGLE";
+				if (MSettings.auth.twitter) req.session.authType="TWITTER";
+				if (MSettings.auth.facebook) req.session.authType="FACEBOOK";
 				if (!req.user) req.user=req.session.user;
 				if (req.user) { 
 					return next(); 
@@ -3592,7 +3590,28 @@ asciimo.write(" omneedia", "Colossal", function(art){
 				  secret: google.secret,
 				  scope: MSettings.auth.google.scope
 				})
+
+			};
+			if (MSettings.auth.twitter) {
+
+				var twitter=MSettings.auth.twitter;
 				
+				authom.createServer({
+				  service: "twitter",
+				  id: twitter.key,
+				  secret: twitter.secret
+				})
+			};
+			if (MSettings.auth.facebook) {
+
+				var facebook=MSettings.auth.facebook;
+				console.log(facebook);
+				authom.createServer({
+				  service: "facebook",
+				  id: facebook.key,
+				  secret: facebook.secret
+				})
+
 			};
 
 			authom.on("auth", function(req, res, data) {
