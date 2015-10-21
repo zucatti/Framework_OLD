@@ -772,18 +772,18 @@ function make_ws()
 		REMOTE_API.descriptor="App.REMOTING_API";
 		REMOTE_API.actions={};
 		REMOTE_API.actions["__QUERY__"]=[];
-		REMOTE_API.actions["__QUERY__"][0]={
+		REMOTE_API.actions["__QUERY__"].push({
 			name: "exec",
 			len: 1
-		};
-		REMOTE_API.actions["__QUERY__"][1]={
+		});
+		REMOTE_API.actions["__QUERY__"].push({
 			name: "post",
 			len: 3
-		};
-		REMOTE_API.actions["__QUERY__"][1]={
+		});
+		REMOTE_API.actions["__QUERY__"].push({
 			name: "del",
 			len: 3
-		};
+		});
 		var str="if (Ext.syncRequire) Ext.syncRequire('Ext.direct.Manager');Ext.namespace('App');";
 		str+="App.REMOTING_API="+JSON.stringify(REMOTE_API,null)+";";
 		str+="Ext.Direct.addProvider(App.REMOTING_API);";
