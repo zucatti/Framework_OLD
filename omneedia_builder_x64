@@ -9,6 +9,6 @@ export ANDROID_HOME="$CURRENT_BIN/android-sdk"
 export ANDROID_SDK_HOME="$CURRENT_BIN/android-sdk"
 export JAVA_HOME="$CURRENT_BIN/jdk"
 
-export PATH=$PATH:"$JAVA_HOME/bin":"$ANDROID_HOME/platform-tools":"$ANDROID_HOME/tools":"$CURRENT_BIN":"$CURRENT_BIN/node/bin":"$CURRENT_BIN":"$CURRENT_BIN/node_modules/.bin":"$CURRENT_BIN/ant/bin"
+export PATH="$JAVA_HOME/bin":"$ANDROID_HOME/platform-tools":"$ANDROID_HOME/tools":"$CURRENT_BIN":"$CURRENT_BIN/node/bin":"$CURRENT_BIN":"$CURRENT_BIN/node_modules/.bin":"$CURRENT_BIN/ant/bin":$PATH
 
 node $CURRENT_DIR/bin/omneedia.js --builder $1 $2 $3 $4 $5 $6 $7 $8 $9
